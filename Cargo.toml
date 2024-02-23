@@ -1,0 +1,10 @@
+[package]
+name = "profile-11k"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sliced = { path = "../sliced", default-features = false, features = ["cpu",  "matrix", "opencl", "stack", "autograd", "blas"] }
+graplot = { path = "../graplot" }
