@@ -1,15 +1,17 @@
 use std::vec;
 
-use graplot::Scatter;
+use graplot::{Color, Scatter, BLUE, GREEN, RED};
+use linear::Linear;
+use loss::{cce, cce_grad};
 use sgd::SGD;
-use sliced::{custos::{Base, Cursor, TapeActions}, Matrix, Onehot, CPU};
+use sliced::{custos::{Autograd, Base, Cached, Cursor, TapeActions}, Matrix, Mean, Onehot, CPU};
 
 mod linear;
 mod loss;
 mod sgd;
 
 fn main() {
-    let device = CPU::<Base>::new();
+    let device = CPU::<Autograd<Cached<Base>>>::new();
 
     let first_one_x = -0.33;
     let mut data = vec![first_one_x; 30];
@@ -115,6 +117,10 @@ fn main() {
         *y = (i as f32 * -0.15) - 0.5;
     }
 
+    let mut lin1 = Linear::<f32, _, 2, 16>::new(&device);
+    let mut lin2 = Linear::<f32, _, 16, 3>::new(&device);
+
+
     let mut inputs = Vec::with_capacity(xs.len() * 2);
     for (x, y) in xs.read().iter().copied().zip(ys.read().iter().copied()) {
         inputs.push(x);
@@ -125,7 +131,7 @@ fn main() {
     classes.append(&mut vec![1.; end_second_one - end_first_one]);
     classes.append(&mut vec![2.; xs.len() - end_second_one]);
 
-    let samples = inputs.len();
+    let samples = xs.len();
 
     let inputs = Matrix::from((&device, samples, 2, inputs));
     let classes = Matrix::from((&device, samples, 1, classes));
@@ -134,14 +140,53 @@ fn main() {
 
 
     let sgd = SGD { lr: 0.1 };
-    for epoch in device.range(0..50) {
+    for epoch in device.range(0..3800) {
         unsafe {
             device.gradients_mut().unwrap().zero_grad();
         };
 
+        let out = lin1.forward(&inputs).relu();
+        let out = lin2.forward(&out).softmax();
+
+        let loss = cce(&out, &classes, out.cols());
+        let grad = cce_grad(&out, &classes, out.rows());
+
+        let avg_loss = device.mean(&loss);
+        println!("epoch: {epoch}, loss: {avg_loss}");
+        out.backward_with(&grad);
+
+        sgd.step(lin1.params());
+        sgd.step(lin2.params());
+
     }
-    
 
     let mut scatter = Scatter::new((xs.read(), ys.read()));
+
+    let colors = vec![RED, GREEN, BLUE];
+    for x in -45..40 {
+        let x = x as f32 / 100.;
+        for y in -170..170 {
+            let y = y as f32 / 100.;
+            let input = Matrix::from((&device, 1, 2, vec![x, y]));
+            let out = lin1.forward(&input).relu();
+            let out = lin2.forward(&out).softmax();
+            
+            let mut max = out[0];
+            let mut idx = 0;
+            for i in 1..out.len() {
+                if out[i] > max {
+                    max = out[i];
+                    idx = i;
+                }
+            }
+            let mut color = colors[idx];
+            color.a = 0.01;
+
+            let mut scatter2 = Scatter::new((vec![x], vec![y]));
+            scatter2.plot.line_desc[0].color = color;
+            scatter.add(scatter2.plot);
+        }
+    }
+
     scatter.show();
 }
