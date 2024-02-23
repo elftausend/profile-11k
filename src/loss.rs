@@ -1,4 +1,7 @@
-use sliced::{custos::{number::Float, AddOperation, Combiner, Device}, BinaryElementWise, Buffer, Clip, SumCols};
+use sliced::{
+    custos::{number::Float, AddOperation, Combiner, Device},
+    BinaryElementWise, Buffer, Clip, SumCols,
+};
 
 pub fn cce<
     'a,

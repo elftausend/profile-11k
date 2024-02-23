@@ -1,4 +1,7 @@
-use sliced::{custos::{number::Float, Alloc, Device, IsShapeIndep, OnNewBuffer}, Buffer, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
+use sliced::{
+    custos::{number::Float, Alloc, Device, IsShapeIndep, OnNewBuffer},
+    Buffer, GemmMayGrad, Matrix, RandOp, RowOpMayGrad,
+};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,

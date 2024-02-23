@@ -1,8 +1,11 @@
 pub struct SGD<T> {
-    lr: T,
+    pub lr: T,
 }
 
-use sliced::custos::{prelude::{ClearBuf, One, WriteBuf}, Alloc, MayTapeActions, ZeroGrad};
+use sliced::custos::{
+    prelude::{ClearBuf, One, WriteBuf},
+    Alloc, MayTapeActions, ZeroGrad,
+};
 
 use core::ops::{Mul, SubAssign};
 use std::ops::{Deref, DerefMut};
