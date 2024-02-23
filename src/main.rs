@@ -1,6 +1,6 @@
 use std::vec;
 
-use graplot::{Color, Scatter, BLUE, GREEN, RED};
+use graplot::{Color, Scatter, BLUE, GREEN, RED, VIOLET};
 use linear::Linear;
 use loss::{cce, cce_grad};
 use sgd::SGD;
@@ -67,6 +67,10 @@ fn main() {
         .as_mut(),
     );
 
+    let end_k = data.len();
+
+    data.extend_from_slice(&[0.3, 0.1, -0.3, -0.26, -0.04, 0.11, 0.15, 0.125, -0.22]);
+
     let xs = Matrix::from((&device, 1, data.len(), data));
 
     let mut ys = Matrix::from((&device, 1, xs.len(), vec![0.; xs.len()]));
@@ -113,12 +117,14 @@ fn main() {
     {
         *y = (i as f32 * 0.1) - 0.5;
     }
-    for (i, y) in ys[end_second_one + 35..].iter_mut().enumerate() {
+    for (i, y) in ys[end_second_one + 35..end_k].iter_mut().enumerate() {
         *y = (i as f32 * -0.15) - 0.5;
     }
 
-    let mut lin1 = Linear::<f32, _, 2, 16>::new(&device);
-    let mut lin2 = Linear::<f32, _, 16, 3>::new(&device);
+    ys[end_k..].copy_from_slice(&[0.3, 0.1, -0.3, -0.26, -0.04, -1., -1.06, -1.1, 0.89]);
+
+    let mut lin1 = Linear::<f32, _, 2, 32>::new(&device);
+    let mut lin2 = Linear::<f32, _, 32, 4>::new(&device);
 
 
     let mut inputs = Vec::with_capacity(xs.len() * 2);
@@ -129,18 +135,19 @@ fn main() {
 
     let mut classes = vec![0f32; end_first_one];
     classes.append(&mut vec![1.; end_second_one - end_first_one]);
-    classes.append(&mut vec![2.; xs.len() - end_second_one]);
+    classes.append(&mut vec![2.; end_k - end_second_one]);
+    classes.append(&mut vec![3.; xs.len() - end_k]);
 
     let samples = xs.len();
 
     let inputs = Matrix::from((&device, samples, 2, inputs));
     let classes = Matrix::from((&device, samples, 1, classes));
     let classes = device.onehot(&classes);
-    let classes = Matrix::from((classes, samples, 3)).no_grad();
+    let classes = Matrix::from((classes, samples, 4)).no_grad();
 
 
     let sgd = SGD { lr: 0.1 };
-    for epoch in device.range(0..3800) {
+    for epoch in device.range(0..38000) {
         unsafe {
             device.gradients_mut().unwrap().zero_grad();
         };
@@ -160,9 +167,22 @@ fn main() {
 
     }
 
-    let mut scatter = Scatter::new((xs.read(), ys.read()));
+    let mut scatter = Scatter::new((&xs.read()[..end_first_one], &ys.read()[..end_first_one]));
+    scatter.plot.line_desc[0].color = RED;
+    
+    let mut scatter_green = Scatter::new((&xs.read()[end_first_one..end_second_one], &ys.read()[end_first_one..end_second_one]));
+    scatter_green.plot.line_desc[0].color = GREEN;
+    scatter.add(scatter_green.plot);
 
-    let colors = vec![RED, GREEN, BLUE];
+    let mut scatter_blue = Scatter::new((&xs.read()[end_second_one..end_k], &ys.read()[end_second_one..end_k]));
+    scatter_blue.plot.line_desc[0].color = BLUE;
+    scatter.add(scatter_blue.plot);
+
+    let mut frags = Scatter::new((&xs.read()[end_k..], &ys.read()[end_k..]));
+    frags.plot.line_desc[0].color = VIOLET;
+    scatter.add(frags.plot);
+
+    let colors = vec![RED, GREEN, BLUE, VIOLET];
     for x in -45..40 {
         let x = x as f32 / 100.;
         for y in -170..170 {
@@ -180,7 +200,7 @@ fn main() {
                 }
             }
             let mut color = colors[idx];
-            color.a = 0.01;
+            color.a = 0.015;
 
             let mut scatter2 = Scatter::new((vec![x], vec![y]));
             scatter2.plot.line_desc[0].color = color;
