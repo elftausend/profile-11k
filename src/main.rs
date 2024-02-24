@@ -1,6 +1,6 @@
 use std::vec;
 
-use graplot::{Color, Scatter, BLUE, GREEN, RED, VIOLET};
+use graplot::{Color, Scatter, XEnd, BLUE, GREEN, RED, VIOLET};
 use linear::Linear;
 use loss::{cce, cce_grad};
 use sgd::SGD;
@@ -183,9 +183,14 @@ fn main() {
     scatter.add(frags.plot);
 
     let colors = vec![RED, GREEN, BLUE, VIOLET];
-    for x in -45..40 {
+
+    scatter.plot.desc.end_x = Some(XEnd(0.44));
+    // scatter.plot
+
+    
+    for x in -95..90 { // -45..40
         let x = x as f32 / 100.;
-        for y in -170..170 {
+        for y in -270..270 { // -170..170
             let y = y as f32 / 100.;
             let input = Matrix::from((&device, 1, 2, vec![x, y]));
             let out = lin1.forward(&input).relu();
