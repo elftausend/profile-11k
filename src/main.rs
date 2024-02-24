@@ -1,10 +1,13 @@
 use std::vec;
 
-use graplot::{Color, Scatter, XEnd, BLUE, GREEN, RED, VIOLET};
+use graplot::{Scatter, XEnd, BLUE, GREEN, RED, VIOLET};
 use linear::Linear;
 use loss::{cce, cce_grad};
 use sgd::SGD;
-use sliced::{custos::{Autograd, Base, Cached, Cursor, TapeActions}, Matrix, Mean, Onehot, CPU};
+use sliced::{
+    custos::{Autograd, Base, Cached, Cursor, TapeActions},
+    Matrix, Mean, Onehot, CPU,
+};
 
 mod linear;
 mod loss;
@@ -126,7 +129,6 @@ fn main() {
     let mut lin1 = Linear::<f32, _, 2, 32>::new(&device);
     let mut lin2 = Linear::<f32, _, 32, 4>::new(&device);
 
-
     let mut inputs = Vec::with_capacity(xs.len() * 2);
     for (x, y) in xs.read().iter().copied().zip(ys.read().iter().copied()) {
         inputs.push(x);
@@ -144,7 +146,6 @@ fn main() {
     let classes = Matrix::from((&device, samples, 1, classes));
     let classes = device.onehot(&classes);
     let classes = Matrix::from((classes, samples, 4)).no_grad();
-
 
     let sgd = SGD { lr: 0.1 };
     for epoch in device.range(0..38000) {
@@ -164,17 +165,22 @@ fn main() {
 
         sgd.step(lin1.params());
         sgd.step(lin2.params());
-
     }
 
     let mut scatter = Scatter::new((&xs.read()[..end_first_one], &ys.read()[..end_first_one]));
     scatter.plot.line_desc[0].color = RED;
-    
-    let mut scatter_green = Scatter::new((&xs.read()[end_first_one..end_second_one], &ys.read()[end_first_one..end_second_one]));
+
+    let mut scatter_green = Scatter::new((
+        &xs.read()[end_first_one..end_second_one],
+        &ys.read()[end_first_one..end_second_one],
+    ));
     scatter_green.plot.line_desc[0].color = GREEN;
     scatter.add(scatter_green.plot);
 
-    let mut scatter_blue = Scatter::new((&xs.read()[end_second_one..end_k], &ys.read()[end_second_one..end_k]));
+    let mut scatter_blue = Scatter::new((
+        &xs.read()[end_second_one..end_k],
+        &ys.read()[end_second_one..end_k],
+    ));
     scatter_blue.plot.line_desc[0].color = BLUE;
     scatter.add(scatter_blue.plot);
 
@@ -187,15 +193,16 @@ fn main() {
     scatter.plot.desc.end_x = Some(XEnd(0.44));
     // scatter.plot
 
-    
-    for x in -95..90 { // -45..40
+    for x in -95..90 {
+        // -45..40
         let x = x as f32 / 100.;
-        for y in -270..270 { // -170..170
+        for y in -270..270 {
+            // -170..170
             let y = y as f32 / 100.;
             let input = Matrix::from((&device, 1, 2, vec![x, y]));
             let out = lin1.forward(&input).relu();
             let out = lin2.forward(&out).softmax();
-            
+
             let mut max = out[0];
             let mut idx = 0;
             for i in 1..out.len() {
