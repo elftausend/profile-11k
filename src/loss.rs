@@ -16,7 +16,7 @@ where
     // could use functions with grad fn -> use device.no_grad_ctx(|| { ... })
     // device.no_grad_ctx();
     let preds = device.clip(preds, T::as_generic(1E-7), T::as_generic(1. - 1E-7));
-    let preds = device.mul(&preds, &targets);
+    let preds = device.mul(&preds, targets);
     let preds = device.sum_cols(cols, &preds);
     device.apply_fn(&preds, |v| v.ln().neg())
 }

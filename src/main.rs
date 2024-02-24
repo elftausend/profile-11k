@@ -188,7 +188,7 @@ fn main() {
     frags.plot.line_desc[0].color = VIOLET;
     scatter.add(frags.plot);
 
-    let colors = vec![RED, GREEN, BLUE, VIOLET];
+    let colors = [RED, GREEN, BLUE, VIOLET];
 
     scatter.plot.desc.end_x = Some(XEnd(0.44));
     // scatter.plot
