@@ -1,6 +1,6 @@
 use std::vec;
 
-use graplot::{Scatter, XEnd, BLUE, GREEN, RED, VIOLET};
+use graplot::{Color, Scatter, XEnd, BLUE, DARKGREEN, DARKPURPLE, GREEN, RED, VIOLET};
 use linear::Linear;
 use loss::{cce, cce_grad};
 use sgd::SGD;
@@ -174,7 +174,9 @@ fn main() {
         &xs.read()[end_first_one..end_second_one],
         &ys.read()[end_first_one..end_second_one],
     ));
-    scatter_green.plot.line_desc[0].color = GREEN;
+
+    pub const SPEC_GREEN: Color = Color::new(0.00, 0.81, 0.19, 1.00);
+    scatter_green.plot.line_desc[0].color = SPEC_GREEN;
     scatter.add(scatter_green.plot);
 
     let mut scatter_blue = Scatter::new((
@@ -188,7 +190,7 @@ fn main() {
     frags.plot.line_desc[0].color = VIOLET;
     scatter.add(frags.plot);
 
-    let colors = [RED, GREEN, BLUE, VIOLET];
+    let colors = [RED, GREEN, BLUE, DARKPURPLE];
 
     scatter.plot.desc.end_x = Some(XEnd(0.44));
     // scatter.plot
@@ -212,7 +214,7 @@ fn main() {
                 }
             }
             let mut color = colors[idx];
-            color.a = 0.015;
+            color.a = 0.011;
 
             let mut scatter2 = Scatter::new((vec![x], vec![y]));
             scatter2.plot.line_desc[0].color = color;
